@@ -1,0 +1,89 @@
+name: Godot Release Check and Build Installers
+
+on:
+  schedule:
+    - cron: "0 12 * * *"  # Runs every day at noon UTC
+  workflow_dispatch: # Allows manual trigger of the workflow
+
+jobs:
+  check-new-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+      
+    - name: Check for New Godot Stable Release
+      id: godot_release
+      run: |
+        # Fetch the latest stable release from the Godot GitHub repository
+        LATEST_VERSION=$(curl -s https://api.github.com/repos/godotengine/godot/releases/latest | jq -r '.tag_name')
+        echo "Latest Godot version: $LATEST_VERSION"
+
+        # Store the latest release version in an output for the next steps
+        echo "::set-output name=godot_version::$LATEST_VERSION"
+        
+    - name: Compare with Current Version
+      id: compare
+      run: |
+        # Read the latest version and compare it with the current version
+        LATEST_VERSION=${{ steps.godot_release.outputs.godot_version }}
+        CURRENT_VERSION=$(cat version.txt || echo "none")
+
+        if [ "$LATEST_VERSION" = "$CURRENT_VERSION" ]; then
+          echo "No new release found."
+          exit 0
+        else
+          echo "New release found: $LATEST_VERSION"
+          echo $LATEST_VERSION > version.txt
+        fi
+
+    - name: Download Latest Godot Regular Version
+      if: steps.compare.outputs.result != 'no-new-release'
+      run: |
+        LATEST_VERSION=${{ steps.godot_release.outputs.godot_version }}
+
+        # Download the regular version of Godot
+        curl -L -o godot.zip "https://downloads.tuxfamily.org/godotengine/$LATEST_VERSION/Godot_v${LATEST_VERSION}_win64.zip"
+
+        # Unzip the regular version
+        unzip godot.zip -d godot-regular
+
+    - name: Download Latest Godot Mono Version
+      if: steps.compare.outputs.result != 'no-new-release'
+      run: |
+        LATEST_VERSION=${{ steps.godot_release.outputs.godot_version }}
+
+        # Download the Mono version of Godot
+        curl -L -o godot-mono.zip "https://downloads.tuxfamily.org/godotengine/$LATEST_VERSION/Godot_v${LATEST_VERSION}_mono_win64.zip"
+
+        # Unzip the Mono version
+        unzip godot-mono.zip -d godot-mono
+
+    - name: Build NSIS Installer for Regular Godot
+      if: steps.compare.outputs.result != 'no-new-release'
+      run: |
+        # Build NSIS installer for the regular version
+        makensis installer/godot_installer_script.nsi
+
+    - name: Build NSIS Installer for Mono Godot
+      if: steps.compare.outputs.result != 'no-new-release'
+      run: |
+        # Build NSIS installer for the Mono version
+        makensis installer/godot_mono_installer_script.nsi
+
+    - name: Upload Regular Godot Installer to GitHub Releases
+      if: steps.compare.outputs.result != 'no-new-release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "path/to/your/generated/godot_setup.exe"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Mono Godot Installer to GitHub Releases
+      if: steps.compare.outputs.result != 'no-new-release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "path/to/your/generated/goto_mono_setup.exe"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
