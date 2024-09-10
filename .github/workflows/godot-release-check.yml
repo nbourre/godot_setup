@@ -76,7 +76,7 @@ jobs:
       if: steps.compare.outputs.result != 'no-new-release'
       uses: softprops/action-gh-release@v1
       with:
-        files: "path/to/your/generated/godot_setup.exe"
+        files: "bin/godot_setup.exe"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -84,6 +84,6 @@ jobs:
       if: steps.compare.outputs.result != 'no-new-release'
       uses: softprops/action-gh-release@v1
       with:
-        files: "path/to/your/generated/goto_mono_setup.exe"
+        files: "bin/goto_mono_setup.exe"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
