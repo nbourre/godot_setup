@@ -31,11 +31,12 @@ jobs:
 
       - name: Download regular Godot
         run: |
-          Invoke-WebRequest "https://downloads.tuxfamily.org/godotengine/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_win64.exe.zip" -OutFile godot_build\godot.zip
+          Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_win64.exe.zip"
 
       - name: Download mono Godot
         run: |
-          Invoke-WebRequest "https://downloads.tuxfamily.org/godotengine/${env:GODOT_VERSION}/mono/Godot_v${env:GODOT_VERSION}_mono_win64.zip" -OutFile godot_build\godot_mono.zip
+          Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_mono_win64.zip"
+
 
       - name: Extract ZIPs
         run: |
