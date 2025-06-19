@@ -27,12 +27,25 @@ jobs:
           echo "Latest version: $($stable.tag_name)"
           echo "version=$($stable.tag_name)" >> $env:GITHUB_OUTPUT
 
-
       - name: Set up variables
         run: |
           echo "GODOT_VERSION=${{ steps.godot.outputs.version }}" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "GODOT_FILENAME=Godot_v${{ steps.godot.outputs.version }}_win64.exe.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "MONO_FILENAME=Godot_v${{ steps.godot.outputs.version }}_mono_win64.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Skip if release already exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version = "${{ env.GODOT_VERSION }}"
+          $headers = @{ Authorization = "Bearer $env:GH_TOKEN" }
+          try {
+            $existing = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/tags/$version" -Headers $headers -ErrorAction Stop
+            Write-Host "Release for $version already exists. Skipping build."
+            exit 0
+          } catch {
+            Write-Host "No existing release for $version — continuing."
+          }
 
       - name: Create working directory
         run: mkdir godot_build
