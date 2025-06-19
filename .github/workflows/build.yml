@@ -37,11 +37,10 @@ jobs:
         run: |
           Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_mono_win64.zip"
 
-
       - name: Extract ZIPs
         run: |
-          Expand-Archive godot_build\godot.zip -DestinationPath godot_build\regular
-          Expand-Archive godot_build\godot_mono.zip -DestinationPath godot_build\mono
+          Expand-Archive -Path "$env:GITHUB_WORKSPACE\godot_build\godot.zip" -DestinationPath "$env:GITHUB_WORKSPACE\godot_build\regular"
+          Expand-Archive -Path "$env:GITHUB_WORKSPACE\godot_build\godot_mono.zip" -DestinationPath "$env:GITHUB_WORKSPACE\godot_build\mono"
 
       - name: Build regular Godot installer
         run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_installer.nsis
