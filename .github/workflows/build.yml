@@ -51,6 +51,7 @@ jobs:
           $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$fileName"
 
           if (-Not (Test-Path $zipPath)) {
+            New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE/godot_cache" | Out-Null
             Write-Host "Downloading from: https://github.com/godotengine/godot/releases/download/$version/$fileName"
             Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/$fileName" -OutFile $zipPath
           }
@@ -65,6 +66,7 @@ jobs:
           $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$fileName"
 
           if (-Not (Test-Path $zipPath)) {
+            New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE/godot_cache" | Out-Null
             Write-Host "Downloading from: https://github.com/godotengine/godot/releases/download/$version/$fileName"
             Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/$fileName" -OutFile $zipPath
           }
