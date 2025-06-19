@@ -1,7 +1,7 @@
-# godot_setup
+# What is this?
 Repo that creates a Godot Windows setup automatically with each release.
 
-👉 Get them [here](releases).
+👉 Get them [here](https://github.com/nbourre/godot_setup/releases).
 
 # Testing NSIS script from home
 Ensure that your have a `godot_build/mono` or `godot_build/regular` folder with the Godot build you want to package.
