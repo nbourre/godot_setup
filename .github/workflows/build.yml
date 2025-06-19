@@ -1,0 +1,61 @@
+name: Build Godot Setup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * *"  # Every day at noon UTC
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Get latest stable Godot version
+        id: godot
+        run: |
+          $releases = Invoke-RestMethod https://api.github.com/repos/godotengine/godot/releases
+          $stable = $releases | Where-Object { $_.prerelease -eq $false -and $_.draft -eq $false } | Select-Object -First 1
+          echo "Latest version: $($stable.tag_name)"
+          echo "version=$($stable.tag_name)" >> $env:GITHUB_OUTPUT
+
+      - name: Set up variables
+        run: |
+          echo "GODOT_VERSION=${{ steps.godot.outputs.version }}" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "GODOT_FILENAME=Godot_v${{ steps.godot.outputs.version }}_win64.exe.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "MONO_FILENAME=Godot_v${{ steps.godot.outputs.version }}_mono_win64.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Create working directory
+        run: mkdir godot_build
+
+      - name: Download regular Godot
+        run: |
+          Invoke-WebRequest "https://downloads.tuxfamily.org/godotengine/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_win64.exe.zip" -OutFile godot_build\godot.zip
+
+      - name: Download mono Godot
+        run: |
+          Invoke-WebRequest "https://downloads.tuxfamily.org/godotengine/${env:GODOT_VERSION}/mono/Godot_v${env:GODOT_VERSION}_mono_win64.zip" -OutFile godot_build\godot_mono.zip
+
+      - name: Extract ZIPs
+        run: |
+          Expand-Archive godot_build\godot.zip -DestinationPath godot_build\regular
+          Expand-Archive godot_build\godot_mono.zip -DestinationPath godot_build\mono
+
+      - name: Build regular Godot installer
+        run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_installer.nsis
+
+      - name: Build Mono Godot installer
+        run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_mono_installer.nsis
+
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.GODOT_VERSION }}
+          name: Godot ${{ env.GODOT_VERSION }} Installers
+          files: |
+            godot_setup_${{ env.GODOT_VERSION }}.exe
+            godot_mono_setup_${{ env.GODOT_VERSION }}.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
