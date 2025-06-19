@@ -44,7 +44,7 @@ jobs:
         shell: pwsh
         run: |
           $zipPath = "$env:GITHUB_WORKSPACE/godot_build/godot_mono.zip"
-          Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/mono/Godot_v${env:GODOT_VERSION}_mono_win64.zip" -OutFile $zipPath
+          Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_mono_win64.zip" -OutFile $zipPath
           Write-Host "Downloaded mono ZIP to: $zipPath"
 
       - name: Extract ZIPs
@@ -62,6 +62,7 @@ jobs:
 
           Expand-Archive -Path $regularZip -DestinationPath "$env:GITHUB_WORKSPACE/godot_build/regular"
           Expand-Archive -Path $monoZip -DestinationPath "$env:GITHUB_WORKSPACE/godot_build/mono"
+
 
       - name: Build regular Godot installer
         run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_installer.nsis
