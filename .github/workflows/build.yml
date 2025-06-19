@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 12 * * *"  # Every day at noon UTC
 
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest

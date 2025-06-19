@@ -20,7 +20,7 @@
 !define STARTMENU_FOLDER "Godot ${PRODUCT_VERSION}"
 
 ; ==== OUTPUT FILE ====
-OutFile "godot_setup_${PRODUCT_VERSION}.exe"
+OutFile "godot_mono_setup_${PRODUCT_VERSION}.exe"
 InstallDir "${INSTALL_DIR}"
 
 ; ==== PAGES ====
