@@ -9,7 +9,6 @@
 
 ; ==== METADATA ====
 !define EXE_NAME "Godot_v${VERSION}_mono_win64.exe"
-!define EXE_SUBDIR "$INSTDIR\${EXE_NAME}"
 !define PRODUCT_NAME "Godot Engine Mono"
 !define PRODUCT_VERSION "${VERSION}"
 !define PRODUCT_PUBLISHER "Godot Engine"
@@ -18,7 +17,7 @@
 !define PRODUCT_UNINST_ROOT_KEY "HKCU" ; Install in current user scope (no admin needed)
 
 ; ==== INSTALLATION TARGETS ====
-!define INSTALL_DIR "$LOCALAPPDATA\Godot\${PRODUCT_VERSION}"
+!define INSTALL_DIR "$LOCALAPPDATA\Godot\${PRODUCT_VERSION}_mono"
 !define STARTMENU_FOLDER "Godot"
 
 ;Request application privileges for Windows
@@ -44,8 +43,8 @@ Section "Install"
 
     ; Optional: create Start Menu shortcuts
     CreateDirectory "$SMPROGRAMS\${STARTMENU_FOLDER}"
-    CreateShortCut "$SMPROGRAMS\${STARTMENU_FOLDER}\Godot Mono.lnk" "${EXE_SUBDIR}\${EXE_NAME}"
-    CreateShortCut "$SMPROGRAMS\${STARTMENU_FOLDER}\Uninstall.lnk" "$INSTDIR\uninstall.exe"
+    CreateShortCut "$SMPROGRAMS\${STARTMENU_FOLDER}\Godot Mono.lnk" "$INSTDIR\${EXE_NAME}"
+    CreateShortCut "$SMPROGRAMS\${STARTMENU_FOLDER}\Uninstall Godot Mono.lnk" "$INSTDIR\uninstall.exe"
 
     ; Register uninstaller in registry
     WriteUninstaller "$INSTDIR\uninstall.exe"
@@ -66,7 +65,7 @@ Section "Uninstall"
 
     ; Remove Start Menu shortcuts
     Delete "$SMPROGRAMS\${STARTMENU_FOLDER}\Godot Mono.lnk"
-    Delete "$SMPROGRAMS\${STARTMENU_FOLDER}\Uninstall.lnk"
+    Delete "$SMPROGRAMS\${STARTMENU_FOLDER}\Uninstall Godot Mono.lnk"
     RMDir "$SMPROGRAMS\${STARTMENU_FOLDER}"
 
     ; Remove registry keys

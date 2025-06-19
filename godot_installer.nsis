@@ -10,8 +10,8 @@
 !define PRODUCT_UNINST_KEY "${PRODUCT_NAME} ${PRODUCT_VERSION} (Standard)"
 !define PRODUCT_UNINST_ROOT_KEY "HKCU"
 
-!define INSTALL_DIR "$LOCALAPPDATA\Godot"
-!define STARTMENU_FOLDER "Godot ${PRODUCT_VERSION}"
+!define INSTALL_DIR "$LOCALAPPDATA\Godot\${PRODUCT_VERSION}"
+!define STARTMENU_FOLDER "Godot"
 
 ;Request application privileges for Windows
 RequestExecutionLevel user
