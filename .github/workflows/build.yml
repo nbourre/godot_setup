@@ -34,18 +34,34 @@ jobs:
         run: mkdir godot_build
 
       - name: Download regular Godot
+        shell: pwsh
         run: |
-          Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_win64.exe.zip"
+          $zipPath = "$env:GITHUB_WORKSPACE/godot_build/godot.zip"
+          Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_win64.exe.zip" -OutFile $zipPath
+          Write-Host "Downloaded regular ZIP to: $zipPath"
 
       - name: Download mono Godot
+        shell: pwsh
         run: |
-          Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_mono_win64.zip"
+          $zipPath = "$env:GITHUB_WORKSPACE/godot_build/godot_mono.zip"
+          Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/mono/Godot_v${env:GODOT_VERSION}_mono_win64.zip" -OutFile $zipPath
+          Write-Host "Downloaded mono ZIP to: $zipPath"
 
       - name: Extract ZIPs
         shell: pwsh
         run: |
-          Expand-Archive -Path "$env:GITHUB_WORKSPACE/godot_build/godot.zip" -DestinationPath "$env:GITHUB_WORKSPACE/godot_build/regular"
-          Expand-Archive -Path "$env:GITHUB_WORKSPACE/godot_build/godot_mono.zip" -DestinationPath "$env:GITHUB_WORKSPACE/godot_build/mono"
+          $regularZip = "$env:GITHUB_WORKSPACE/godot_build/godot.zip"
+          $monoZip = "$env:GITHUB_WORKSPACE/godot_build/godot_mono.zip"
+
+          if (-Not (Test-Path $regularZip)) {
+            Write-Error "Regular Godot ZIP not found at $regularZip"
+          }
+          if (-Not (Test-Path $monoZip)) {
+            Write-Error "Mono Godot ZIP not found at $monoZip"
+          }
+
+          Expand-Archive -Path $regularZip -DestinationPath "$env:GITHUB_WORKSPACE/godot_build/regular"
+          Expand-Archive -Path $monoZip -DestinationPath "$env:GITHUB_WORKSPACE/godot_build/mono"
 
       - name: Build regular Godot installer
         run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_installer.nsis
