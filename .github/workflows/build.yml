@@ -14,11 +14,15 @@ jobs:
 
       - name: Get latest stable Godot version
         id: godot
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $releases = Invoke-RestMethod https://api.github.com/repos/godotengine/godot/releases
+          $headers = @{ Authorization = "Bearer $env:GH_TOKEN" }
+          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/godotengine/godot/releases" -Headers $headers
           $stable = $releases | Where-Object { $_.prerelease -eq $false -and $_.draft -eq $false } | Select-Object -First 1
           echo "Latest version: $($stable.tag_name)"
           echo "version=$($stable.tag_name)" >> $env:GITHUB_OUTPUT
+
 
       - name: Set up variables
         run: |
