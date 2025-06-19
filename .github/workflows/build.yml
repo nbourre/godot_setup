@@ -46,20 +46,28 @@ jobs:
       - name: Download regular Godot (if not cached)
         shell: pwsh
         run: |
-          $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/Godot_v${env:GODOT_VERSION}_win64.exe.zip"
+          $version = "$env:GODOT_VERSION"
+          $fileName = "Godot_v$version_win64.exe.zip"
+          $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$fileName"
+
           if (-Not (Test-Path $zipPath)) {
-            Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_win64.exe.zip" -OutFile $zipPath
+            Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/$fileName" -OutFile $zipPath
           }
-          Copy-Item $zipPath -Destination godot_build/godot.zip
+
+          Copy-Item $zipPath -Destination "godot_build/godot.zip"
 
       - name: Download mono Godot (if not cached)
         shell: pwsh
         run: |
-          $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/Godot_v${env:GODOT_VERSION}_mono_win64.zip"
+          $version = "$env:GODOT_VERSION"
+          $fileName = "Godot_v$version_mono_win64.zip"
+          $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$fileName"
+
           if (-Not (Test-Path $zipPath)) {
-            Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_mono_win64.zip" -OutFile $zipPath
+            Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/$fileName" -OutFile $zipPath
           }
-          Copy-Item $zipPath -Destination godot_build/godot_mono.zip
+
+          Copy-Item $zipPath -Destination "godot_build/godot_mono.zip"
 
 
       # - name: Download regular Godot
