@@ -47,10 +47,11 @@ jobs:
         shell: pwsh
         run: |
           $version = "$env:GODOT_VERSION"
-          $fileName = "Godot_v$version_win64.exe.zip"
+          $filename = "$env:GODOT_FILENAME"
           $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$fileName"
 
           if (-Not (Test-Path $zipPath)) {
+            Write-Host "Downloading from: https://github.com/godotengine/godot/releases/download/$version/$fileName"
             Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/$fileName" -OutFile $zipPath
           }
 
@@ -60,10 +61,11 @@ jobs:
         shell: pwsh
         run: |
           $version = "$env:GODOT_VERSION"
-          $fileName = "Godot_v$version_mono_win64.zip"
+          $fileName = "$env:MONO_FILENAME"
           $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$fileName"
 
           if (-Not (Test-Path $zipPath)) {
+            Write-Host "Downloading from: https://github.com/godotengine/godot/releases/download/$version/$fileName"
             Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/$fileName" -OutFile $zipPath
           }
 
