@@ -41,22 +41,27 @@ jobs:
           $headers = @{ Authorization = "Bearer $env:GH_TOKEN" }
           try {
             $existing = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/tags/$version" -Headers $headers -ErrorAction Stop
+            echo "skip=true" >> $env:GITHUB_OUTPUT
             Write-Host "Release for $version already exists. Skipping build."
             exit 0
           } catch {
+            echo "skip=false" >> $env:GITHUB_OUTPUT
             Write-Host "No existing release for $version — continuing."
           }
 
       - name: Create working directory
+        if: steps.check_release.outputs.skip != 'true'
         run: mkdir godot_build
       
       - name: Cache Godot ZIPs
+        if: steps.check_release.outputs.skip != 'true'
         uses: actions/cache@v4
         with:
           path: godot_cache
           key: godot-${{ env.GODOT_VERSION }}
 
       - name: Download regular Godot (if not cached)
+        if: steps.check_release.outputs.skip != 'true'
         shell: pwsh
         run: |
           $version = "$env:GODOT_VERSION"
@@ -72,6 +77,7 @@ jobs:
           Copy-Item $zipPath -Destination "godot_build/godot.zip"
 
       - name: Download mono Godot (if not cached)
+        if: steps.check_release.outputs.skip != 'true'
         shell: pwsh
         run: |
           $version = "$env:GODOT_VERSION"
@@ -102,6 +108,7 @@ jobs:
       #     Write-Host "Downloaded mono ZIP to: $zipPath"
 
       - name: Extract ZIPs
+        if: steps.check_release.outputs.skip != 'true'
         shell: pwsh
         run: |
           $regularZip = "$env:GITHUB_WORKSPACE/godot_build/godot.zip"
@@ -119,12 +126,15 @@ jobs:
 
 
       - name: Build regular Godot installer
+        if: steps.check_release.outputs.skip != 'true'
         run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_installer.nsis
 
       - name: Build Mono Godot installer
+        if: steps.check_release.outputs.skip != 'true'
         run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_mono_installer.nsis
 
       - name: Upload release artifacts
+        if: steps.check_release.outputs.skip != 'true'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.GODOT_VERSION }}
