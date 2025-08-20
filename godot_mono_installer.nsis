@@ -60,7 +60,7 @@ SectionEnd
 ; ==== UNINSTALL SECTION ====
 Section "Uninstall"
     ; Remove main files
-    Delete "$INSTDIR\${EXE_NAME}"
+    Delete "$INSTDIR\mono\${EXE_NAME}"
     Delete "$INSTDIR\uninstall.exe"
     RMDir /r "$INSTDIR"
 
