@@ -27,6 +27,9 @@ jobs:
           echo "Latest version: $($stable.tag_name)"
           echo "version=$($stable.tag_name)" >> $env:GITHUB_OUTPUT
 
+      - name: Install Python dependencies
+        run: pip install requests
+        
       - name: Determine latest of each major version
         id: major_latest
         env:
@@ -178,4 +181,6 @@ jobs:
             godot_mono_setup_${{ env.GODOT_VERSION }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
 
