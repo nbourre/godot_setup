@@ -16,16 +16,6 @@ jobs:
       - name: Checkout this repo
         uses: actions/checkout@v4
 
-      - name: Get latest stable Godot version
-        id: godot
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          $headers = @{ Authorization = "Bearer $env:GH_TOKEN" }
-          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/godotengine/godot/releases" -Headers $headers
-          $stable = $releases | Where-Object { $_.prerelease -eq $false -and $_.draft -eq $false } | Select-Object -First 1
-          echo "Latest version: $($stable.tag_name)"
-          echo "version=$($stable.tag_name)" >> $env:GITHUB_OUTPUT
 
       - name: Install Python dependencies
         run: pip install requests
@@ -74,19 +64,20 @@ jobs:
           print(f"should_build={should_build}")
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write(f"should_build={str(should_build).lower()}\n")
+              f.write(f"version={current}\n")
 
       - name: Set up variables
         run: |
-          echo "GODOT_VERSION=${{ steps.godot.outputs.version }}" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "GODOT_FILENAME=Godot_v${{ steps.godot.outputs.version }}_win64.exe.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "MONO_FILENAME=Godot_v${{ steps.godot.outputs.version }}_mono_win64.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "GODOT_VERSION=${{ steps.major_missing.outputs.version }}" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "GODOT_FILENAME=Godot_v${{ steps.major_missing.outputs.version }}_win64.exe.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "MONO_FILENAME=Godot_v${{ steps.major_missing.outputs.version }}_mono_win64.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Skip if release already exists
         id: check_release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $version = "${{ env.GODOT_VERSION }}"
+          $version = "${{ steps.major_missing.outputs.version }}"
           $headers = @{ Authorization = "Bearer $env:GH_TOKEN" }
           try {
             $existing = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/tags/$version" -Headers $headers -ErrorAction Stop
@@ -107,20 +98,20 @@ jobs:
         uses: actions/cache@v4
         with:
           path: godot_cache
-          key: godot-${{ env.GODOT_VERSION }}
+          key: godot-${{ steps.major_missing.outputs.version }}
 
       - name: Download regular Godot (if not cached)
         if: steps.check_release.outputs.skip != 'true'
         shell: pwsh
         run: |
-          $version = "$env:GODOT_VERSION"
+          $version = "${{ steps.major_missing.outputs.version }}"
           $filename = "$env:GODOT_FILENAME"
-          $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$fileName"
+          $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$filename"
 
           if (-Not (Test-Path $zipPath)) {
             New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE/godot_cache" | Out-Null
-            Write-Host "Downloading from: https://github.com/godotengine/godot/releases/download/$version/$fileName"
-            Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/$fileName" -OutFile $zipPath
+            Write-Host "Downloading from: https://github.com/godotengine/godot/releases/download/$version/$filename"
+            Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/$filename" -OutFile $zipPath
           }
 
           Copy-Item $zipPath -Destination "godot_build/godot.zip"
@@ -129,14 +120,14 @@ jobs:
         if: steps.check_release.outputs.skip != 'true'
         shell: pwsh
         run: |
-          $version = "$env:GODOT_VERSION"
-          $fileName = "$env:MONO_FILENAME"
-          $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$fileName"
+          $version = "${{ steps.major_missing.outputs.version }}"
+          $filename = "$env:MONO_FILENAME"
+          $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$filename"
 
           if (-Not (Test-Path $zipPath)) {
             New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE/godot_cache" | Out-Null
-            Write-Host "Downloading from: https://github.com/godotengine/godot/releases/download/$version/$fileName"
-            Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/$fileName" -OutFile $zipPath
+            Write-Host "Downloading from: https://github.com/godotengine/godot/releases/download/$version/$filename"
+            Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/$filename" -OutFile $zipPath
           }
 
           Copy-Item $zipPath -Destination "godot_build/godot_mono.zip"
@@ -177,21 +168,21 @@ jobs:
 
       - name: Build regular Godot installer
         if: steps.check_release.outputs.skip != 'true' && steps.major_missing.outputs.should_build == 'true'
-        run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_installer.nsis
+        run: makensis /DVERSION=${{ steps.major_missing.outputs.version }} godot_installer.nsis
 
       - name: Build Mono Godot installer
         if: steps.check_release.outputs.skip != 'true' && steps.major_missing.outputs.should_build == 'true'
-        run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_mono_installer.nsis
+        run: makensis /DVERSION=${{ steps.major_missing.outputs.version }} godot_mono_installer.nsis
 
       - name: Upload release artifacts
         if: steps.check_release.outputs.skip != 'true' && steps.major_missing.outputs.should_build == 'true'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.GODOT_VERSION }}
-          name: Godot ${{ env.GODOT_VERSION }} Installers
+          tag_name: ${{ steps.major_missing.outputs.version }}
+          name: Godot ${{ steps.major_missing.outputs.version }} Installers
           files: |
-            godot_setup_${{ env.GODOT_VERSION }}.exe
-            godot_mono_setup_${{ env.GODOT_VERSION }}.exe
+            godot_setup_${{ steps.major_missing.outputs.version }}.exe
+            godot_mono_setup_${{ steps.major_missing.outputs.version }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
