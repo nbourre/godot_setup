@@ -1,3 +1,4 @@
+
 name: Build Godot Setup
 
 on:
@@ -5,29 +6,26 @@ on:
   schedule:
     - cron: "0 12 * * *"  # Every day at noon UTC
 
-
 permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: windows-latest
+  set_matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set_matrix.outputs.matrix }}
     steps:
-      - name: Checkout this repo
-        uses: actions/checkout@v4
-
-
       - name: Install Python dependencies
         run: pip install requests
 
-      - name: Determine missing major versions and set build flag
-        id: major_missing
+      - name: Determine missing major versions and set matrix
+        id: set_matrix
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-        shell: python
         run: |
-          import os, requests, re
+          python <<EOF
+          import os, requests, re, json
           headers = {"Authorization": f"Bearer {os.environ['GH_TOKEN']}"}
           godot_resp = requests.get("https://api.github.com/repos/godotengine/godot/releases", headers=headers)
           godot_releases = godot_resp.json()
@@ -45,66 +43,50 @@ jobs:
               if major not in latest_per_major:
                   latest_per_major[major] = v[3]
 
-          # Fetch your repo releases
           repo_resp = requests.get(f"https://api.github.com/repos/{os.environ['REPO']}/releases", headers=headers)
           repo_releases = repo_resp.json()
           repo_tags = set(r['tag_name'].lstrip('v') for r in repo_releases)
 
-          # Find missing major versions
           missing = []
           for major, tag in latest_per_major.items():
               if tag not in repo_tags:
                   missing.append(tag)
 
-          # Set build flag if current version is missing
-          current = os.environ.get('GODOT_VERSION', '').lstrip('v')
-          should_build = current in missing
-          print(f"Current version: {current}")
           print(f"Missing major versions: {missing}")
-          print(f"should_build={should_build}")
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write(f"should_build={str(should_build).lower()}\n")
-              f.write(f"version={current}\n")
+          matrix = json.dumps({"version": missing})
+          print(f"::set-output name=matrix::{matrix}")
+          EOF
+
+  build:
+    needs: set_matrix
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        version: ${{ fromJson(needs.set_matrix.outputs.matrix).version }}
+    env:
+      GODOT_VERSION: ${{ matrix.version }}
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Install Python dependencies
+        run: pip install requests
 
       - name: Set up variables
         run: |
-          echo "GODOT_VERSION=${{ steps.major_missing.outputs.version }}" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "GODOT_FILENAME=Godot_v${{ steps.major_missing.outputs.version }}_win64.exe.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "MONO_FILENAME=Godot_v${{ steps.major_missing.outputs.version }}_mono_win64.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "GODOT_FILENAME=Godot_v${{ env.GODOT_VERSION }}_win64.exe.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "MONO_FILENAME=Godot_v${{ env.GODOT_VERSION }}_mono_win64.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Skip if release already exists
-        id: check_release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          $version = "${{ steps.major_missing.outputs.version }}"
-          $headers = @{ Authorization = "Bearer $env:GH_TOKEN" }
-          try {
-            $existing = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/tags/$version" -Headers $headers -ErrorAction Stop
-            echo "skip=true" >> $env:GITHUB_OUTPUT
-            Write-Host "Release for $version already exists. Skipping build."
-            exit 0
-          } catch {
-            echo "skip=false" >> $env:GITHUB_OUTPUT
-            Write-Host "No existing release for $version — continuing."
-          }
-
-      - name: Create working directory
-        if: steps.check_release.outputs.skip != 'true'
-        run: mkdir godot_build
-      
       - name: Cache Godot ZIPs
-        if: steps.check_release.outputs.skip != 'true'
         uses: actions/cache@v4
         with:
           path: godot_cache
-          key: godot-${{ steps.major_missing.outputs.version }}
+          key: godot-${{ env.GODOT_VERSION }}
 
       - name: Download regular Godot (if not cached)
-        if: steps.check_release.outputs.skip != 'true'
         shell: pwsh
         run: |
-          $version = "${{ steps.major_missing.outputs.version }}"
+          $version = "$env:GODOT_VERSION"
           $filename = "$env:GODOT_FILENAME"
           $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$filename"
 
@@ -117,10 +99,9 @@ jobs:
           Copy-Item $zipPath -Destination "godot_build/godot.zip"
 
       - name: Download mono Godot (if not cached)
-        if: steps.check_release.outputs.skip != 'true'
         shell: pwsh
         run: |
-          $version = "${{ steps.major_missing.outputs.version }}"
+          $version = "$env:GODOT_VERSION"
           $filename = "$env:MONO_FILENAME"
           $zipPath = "$env:GITHUB_WORKSPACE/godot_cache/$filename"
 
@@ -132,23 +113,38 @@ jobs:
 
           Copy-Item $zipPath -Destination "godot_build/godot_mono.zip"
 
-
-      # - name: Download regular Godot
-      #   shell: pwsh
-      #   run: |
-      #     $zipPath = "$env:GITHUB_WORKSPACE/godot_build/godot.zip"
-      #     Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_win64.exe.zip" -OutFile $zipPath
-      #     Write-Host "Downloaded regular ZIP to: $zipPath"
-
-      # - name: Download mono Godot
-      #   shell: pwsh
-      #   run: |
-      #     $zipPath = "$env:GITHUB_WORKSPACE/godot_build/godot_mono.zip"
-      #     Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}/Godot_v${env:GODOT_VERSION}_mono_win64.zip" -OutFile $zipPath
-      #     Write-Host "Downloaded mono ZIP to: $zipPath"
-
       - name: Extract ZIPs
-        if: steps.check_release.outputs.skip != 'true'
+        shell: pwsh
+        run: |
+          $regularZip = "$env:GITHUB_WORKSPACE/godot_build/godot.zip"
+          $monoZip = "$env:GITHUB_WORKSPACE/godot_build/godot_mono.zip"
+
+          if (-Not (Test-Path $regularZip)) {
+            Write-Error "Regular Godot ZIP not found at $regularZip"
+          }
+          if (-Not (Test-Path $monoZip)) {
+            Write-Error "Mono Godot ZIP not found at $monoZip"
+          }
+
+          Expand-Archive -Path $regularZip -DestinationPath "$env:GITHUB_WORKSPACE/godot_build/regular"
+          Expand-Archive -Path $monoZip -DestinationPath "$env:GITHUB_WORKSPACE/godot_build/mono"
+
+      - name: Build regular Godot installer
+        run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_installer.nsis
+
+      - name: Build Mono Godot installer
+        run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_mono_installer.nsis
+        
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.GODOT_VERSION }}
+          name: Godot ${{ env.GODOT_VERSION }} Installers
+          files: |
+            godot_setup_${{ env.GODOT_VERSION }}.exe
+            godot_mono_setup_${{ env.GODOT_VERSION }}.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
         run: |
           $regularZip = "$env:GITHUB_WORKSPACE/godot_build/godot.zip"
