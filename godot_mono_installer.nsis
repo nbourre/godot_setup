@@ -8,7 +8,8 @@
 !endif
 
 ; ==== METADATA ====
-!define EXE_NAME "Godot_v${VERSION}_mono_win64.exe"
+!define FOLDER_NAME "Godot_v${VERSION}_mono_win64"
+!define EXE_NAME "$FOLDER_NAME.exe"
 !define PRODUCT_NAME "Godot Engine Mono"
 !define PRODUCT_VERSION "${VERSION}"
 !define PRODUCT_PUBLISHER "Godot Engine"
@@ -17,7 +18,7 @@
 !define PRODUCT_UNINST_ROOT_KEY "HKCU" ; Install in current user scope (no admin needed)
 
 ; ==== INSTALLATION TARGETS ====
-!define INSTALL_DIR "$LOCALAPPDATA\Godot\${PRODUCT_VERSION}_mono"
+!define INSTALL_DIR "$LOCALAPPDATA\Godot\mono"
 !define STARTMENU_FOLDER "Godot"
 
 ;Request application privileges for Windows
@@ -43,7 +44,7 @@ Section "Install"
 
     ; Optional: create Start Menu shortcuts
     CreateDirectory "$SMPROGRAMS\${STARTMENU_FOLDER}"
-    CreateShortCut "$SMPROGRAMS\${STARTMENU_FOLDER}\Godot Mono.lnk" "$INSTDIR\${EXE_NAME}"
+    CreateShortCut "$SMPROGRAMS\${STARTMENU_FOLDER}\Godot Mono.lnk" "$INSTDIR\mono\${EXE_NAME}"
     CreateShortCut "$SMPROGRAMS\${STARTMENU_FOLDER}\Uninstall Godot Mono.lnk" "$INSTDIR\uninstall.exe"
 
     ; Register uninstaller in registry
