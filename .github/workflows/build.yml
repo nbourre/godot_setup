@@ -29,18 +29,19 @@ jobs:
 
       - name: Install Python dependencies
         run: pip install requests
-        
-      - name: Determine latest of each major version
-        id: major_latest
+
+      - name: Determine missing major versions and set build flag
+        id: major_missing
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         shell: python
         run: |
           import os, requests, re
           headers = {"Authorization": f"Bearer {os.environ['GH_TOKEN']}"}
-          resp = requests.get("https://api.github.com/repos/godotengine/godot/releases", headers=headers)
-          releases = resp.json()
-          stable = [r for r in releases if not r.get('prerelease', False) and not r.get('draft', False)]
+          godot_resp = requests.get("https://api.github.com/repos/godotengine/godot/releases", headers=headers)
+          godot_releases = godot_resp.json()
+          stable = [r for r in godot_releases if not r.get('prerelease', False) and not r.get('draft', False)]
           tags = [r['tag_name'].lstrip('v') for r in stable]
           versions = []
           for t in tags:
@@ -53,14 +54,26 @@ jobs:
               major = v[0]
               if major not in latest_per_major:
                   latest_per_major[major] = v[3]
+
+          # Fetch your repo releases
+          repo_resp = requests.get(f"https://api.github.com/repos/{os.environ['REPO']}/releases", headers=headers)
+          repo_releases = repo_resp.json()
+          repo_tags = set(r['tag_name'].lstrip('v') for r in repo_releases)
+
+          # Find missing major versions
+          missing = []
+          for major, tag in latest_per_major.items():
+              if tag not in repo_tags:
+                  missing.append(tag)
+
+          # Set build flag if current version is missing
           current = os.environ.get('GODOT_VERSION', '').lstrip('v')
-          current_major = int(current.split('.')[0]) if current else None
-          is_latest = current == latest_per_major.get(current_major, None)
+          should_build = current in missing
           print(f"Current version: {current}")
-          print(f"Latest for major {current_major}: {latest_per_major.get(current_major, None)}")
-          print(f"is_latest={is_latest}")
+          print(f"Missing major versions: {missing}")
+          print(f"should_build={should_build}")
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write(f"is_latest={str(is_latest).lower()}\n")
+              f.write(f"should_build={str(should_build).lower()}\n")
 
       - name: Set up variables
         run: |
@@ -163,15 +176,15 @@ jobs:
 
 
       - name: Build regular Godot installer
-        if: steps.check_release.outputs.skip != 'true' && steps.major_latest.outputs.is_latest == 'true'
+        if: steps.check_release.outputs.skip != 'true' && steps.major_missing.outputs.should_build == 'true'
         run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_installer.nsis
 
       - name: Build Mono Godot installer
-        if: steps.check_release.outputs.skip != 'true' && steps.major_latest.outputs.is_latest == 'true'
+        if: steps.check_release.outputs.skip != 'true' && steps.major_missing.outputs.should_build == 'true'
         run: makensis /DVERSION=${{ env.GODOT_VERSION }} godot_mono_installer.nsis
 
       - name: Upload release artifacts
-        if: steps.check_release.outputs.skip != 'true' && steps.major_latest.outputs.is_latest == 'true'
+        if: steps.check_release.outputs.skip != 'true' && steps.major_missing.outputs.should_build == 'true'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.GODOT_VERSION }}
