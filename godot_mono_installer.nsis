@@ -44,7 +44,7 @@ Section "Install"
 
     ; Optional: create Start Menu shortcuts
     CreateDirectory "$SMPROGRAMS\${STARTMENU_FOLDER}"
-    CreateShortCut "$SMPROGRAMS\${STARTMENU_FOLDER}\Godot Mono.lnk" "$INSTDIR\mono\${EXE_NAME}"
+    CreateShortCut "$SMPROGRAMS\${STARTMENU_FOLDER}\Godot Mono.lnk" "$INSTDIR\${EXE_NAME}"
     CreateShortCut "$SMPROGRAMS\${STARTMENU_FOLDER}\Uninstall Godot Mono.lnk" "$INSTDIR\uninstall.exe"
 
     ; Register uninstaller in registry
