@@ -69,7 +69,7 @@ jobs:
 
   build:
     needs: set_matrix
-    if: ${{ fromJson(needs.set_matrix.outputs.matrix).version && (fromJson(needs.set_matrix.outputs.matrix).version | length) > 0 }}
+    if: ${{ fromJson(needs.set_matrix.outputs.matrix).version != '' }}
     runs-on: windows-latest
     strategy:
       matrix:
