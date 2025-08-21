@@ -9,7 +9,7 @@
 
 ; ==== METADATA ====
 !define FOLDER_NAME "Godot_v${VERSION}_mono_win64"
-!define EXE_NAME "$FOLDER_NAME.exe"
+!define EXE_NAME "${FOLDER_NAME}.exe"
 !define PRODUCT_NAME "Godot Engine Mono"
 !define PRODUCT_VERSION "${VERSION}"
 !define PRODUCT_PUBLISHER "Godot Engine"
