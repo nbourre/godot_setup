@@ -63,7 +63,7 @@ jobs:
           with open('missing_versions.json', 'w') as f:
               json.dump(missing, f)
 
-      - name: Build and release installers for missing versions
+      - name: Build installers for missing versions
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -107,6 +107,24 @@ jobs:
 
             makensis /DVERSION=$version godot_installer.nsis
             makensis /DVERSION=$version godot_mono_installer.nsis
+          }
 
+      - name: Create releases for missing versions
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $missing = Get-Content missing_versions.json | ConvertFrom-Json
+          foreach ($version in $missing) {
+            gh release create $version --repo $env:GITHUB_REPOSITORY --title "Godot $version Installers" --notes "Automated build"
+          }
+
+      - name: Upload installers to releases
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $missing = Get-Content missing_versions.json | ConvertFrom-Json
+          foreach ($version in $missing) {
             gh release upload $version godot_setup_${version}.exe godot_mono_setup_${version}.exe --repo $env:GITHUB_REPOSITORY
           }
