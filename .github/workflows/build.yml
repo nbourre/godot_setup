@@ -65,6 +65,8 @@ jobs:
 
       - name: Build and release installers for missing versions
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $missing = Get-Content missing_versions.json | ConvertFrom-Json
           if ($missing.Count -eq 0) {
