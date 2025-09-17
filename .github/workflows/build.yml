@@ -68,13 +68,16 @@ jobs:
           Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
           scoop bucket add extras
           scoop install nsis
-          makensis -VERSION
+          $env:SCOOP_SHIMS = "$env:USERPROFILE\scoop\shims"
+          echo "SCOOP_SHIMS=$env:SCOOP_SHIMS" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "$env:SCOOP_SHIMS" | Out-File -FilePath $env:GITHUB_PATH -Append
                   
       - name: Build installers for missing versions
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          makensis -VERSION
           $missing = Get-Content missing_versions.json | ConvertFrom-Json
           if ($missing.Count -eq 0) {
             Write-Host "No missing versions to build."
