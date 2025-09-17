@@ -68,10 +68,8 @@ jobs:
           Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
           scoop bucket add extras
           scoop install nsis
-          
-      - name: Print NSIS version
-        run: \%USERPROFILE%\scoop\shims\makensis -VERSION
-        
+          makensis -VERSION
+                  
       - name: Build installers for missing versions
         shell: pwsh
         env:
