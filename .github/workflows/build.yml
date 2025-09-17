@@ -70,7 +70,7 @@ jobs:
           scoop install nsis
           
       - name: Print NSIS version
-        run: makensis -VERSION
+        run: \%USERPROFILE%\scoop\shims\makensis -VERSION
         
       - name: Build installers for missing versions
         shell: pwsh
