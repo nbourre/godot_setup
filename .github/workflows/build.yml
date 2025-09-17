@@ -62,7 +62,16 @@ jobs:
           print(f"Missing major versions: {missing}")
           with open('missing_versions.json', 'w') as f:
               json.dump(missing, f)
-
+              
+      - name: Install NSIS with Scoop
+        run: |
+          Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+          scoop bucket add extras
+          scoop install nsis
+          
+      - name: Print NSIS version
+        run: makensis -VERSION
+        
       - name: Build installers for missing versions
         shell: pwsh
         env:
